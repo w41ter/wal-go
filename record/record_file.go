@@ -39,14 +39,14 @@ type File struct {
 }
 
 // RestoreFile open record file and restore records, push to consumer.
-func RestoreFile(filename string, consumer Consumer) (*File, error) {
+func RestoreFile(filename string, at uint64, consumer Consumer) (*File, error) {
 	record, err := CreateFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
 	var off uint32
-	if off, err = readAllRecords(record.buffer, consumer); err != nil {
+	if off, err = readAllRecords(record.buffer, at, consumer); err != nil {
 		return nil, err
 	}
 	record.offset = off
@@ -144,7 +144,7 @@ func (rf *File) Sync() error {
 	return rf.file.Sync()
 }
 
-func readAllRecords(reader *file.Buffer, consumer Consumer) (uint32, error) {
+func readAllRecords(reader *file.Buffer, at uint64, consumer Consumer) (uint32, error) {
 	var eat uint32
 	for {
 		length, recrd, err := readRecord(reader)
@@ -165,7 +165,9 @@ func readAllRecords(reader *file.Buffer, consumer Consumer) (uint32, error) {
 			return 0, errBadChecksum
 		}
 
-		consumer(recrd.Index, recrd.Data)
+		if recrd.Index >= at {
+			consumer(recrd.Index, recrd.Data)
+		}
 		eat += length + 4
 	}
 	return eat, nil

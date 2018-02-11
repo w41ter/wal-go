@@ -76,7 +76,11 @@ func TestFile_Restore(t *testing.T) {
 		return nil
 	}
 
-	file, err = RestoreFile(filename, func(index uint64, data []byte) {
+	file, err = RestoreFile(filename, 2, func(index uint64, data []byte) {
+		if index < 2 {
+			t.Errorf("get old index")
+		}
+
 		test := getTest(index)
 		if test == nil {
 			t.Errorf("idx: %d, could not found test", index)

@@ -77,7 +77,7 @@ func Open(walDir string, lsn uint64, consumer record.Consumer) (*Wal, error) {
 	recordFiles := make([]*recordFile, 0)
 	for i := index; i < len(names); i++ {
 		path := filepath.Join(walDir, names[i])
-		f, err := record.RestoreFile(path, consumer)
+		f, err := record.RestoreFile(path, lsn, consumer)
 		if err != nil {
 			closeAll(recordFiles)
 			return nil, err
