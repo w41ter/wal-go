@@ -7,7 +7,13 @@ sudo: required
 
 before_install:
   - go get github.com/golang/dep/cmd/dep
+  - go get github.com/mattn/goveralls
+  - go get -u github.com/alecthomas/gometalinter
+  - gometalinter --install
+
+script:
+  - gometalinter --config=linter.json ./...
+  - goveralls -service=travis-ci
 
 install:
   - dep ensure
-  
