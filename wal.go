@@ -100,15 +100,15 @@ func Open(walDir string, lsn uint64, consumer record.Consumer) (*Wal, error) {
 
 // Sync used by customer to write buffered data to file.
 func (wal *Wal) Sync() <-chan error {
-	command, ch := genSync()
-	wal.queue <- command
+	cmd, ch := genSync()
+	wal.queue <- cmd
 	return ch
 }
 
 // Write store data to buffer.
 func (wal *Wal) Write(index uint64, data []byte) <-chan error {
-	command, ch := genAppend(index, data)
-	wal.queue <- command
+	cmd, ch := genAppend(index, data)
+	wal.queue <- cmd
 	return ch
 }
 
@@ -116,8 +116,8 @@ func (wal *Wal) Write(index uint64, data []byte) <-chan error {
 // append, committed work will be execute. caller must
 // ensure no data race at here.
 func (wal *Wal) Close() error {
-	command, errChan := genSync()
-	wal.queue <- command
+	cmd, errChan := genSync()
+	wal.queue <- cmd
 	close(wal.queue)
 
 	err := <-errChan

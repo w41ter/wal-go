@@ -108,13 +108,13 @@ func (rf *File) Write(index uint64, data []byte) error {
 		return errEmptyRecord
 	}
 
-	record := record{
+	recrd := record{
 		Index: index,
 		Data:  data,
 	}
 
-	record.Crc32 = getCrc32(&record)
-	bytes, err := pd.Marshal(&record)
+	recrd.Crc32 = getCrc32(&recrd)
+	bytes, err := pd.Marshal(&recrd)
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (rf *File) Sync() error {
 func readAllRecords(reader *file.Buffer, consumer Consumer) (uint32, error) {
 	var eat uint32
 	for {
-		length, record, err := readRecord(reader)
+		length, recrd, err := readRecord(reader)
 		if err != nil {
 			if err == io.EOF {
 				return 0, errUnexpectedEOF
@@ -160,12 +160,12 @@ func readAllRecords(reader *file.Buffer, consumer Consumer) (uint32, error) {
 			break
 		}
 
-		wchecksum := getCrc32(&record)
-		if wchecksum != record.Crc32 {
+		wchecksum := getCrc32(&recrd)
+		if wchecksum != recrd.Crc32 {
 			return 0, errBadChecksum
 		}
 
-		consumer(record.Index, record.Data)
+		consumer(recrd.Index, recrd.Data)
 		eat += length + 4
 	}
 	return eat, nil
@@ -200,8 +200,4 @@ func getCrc32(record *record) uint32 {
 	crc := crc32.Checksum(a[:], crc32Table)
 	crc = crc32.Update(crc, crc32Table, record.Data)
 	return crc
-}
-
-func aligned(size int, padding int) int {
-	return size + padding - (size % padding)
 }

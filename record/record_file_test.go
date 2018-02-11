@@ -58,7 +58,7 @@ func TestFile_Restore(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		if err := file.Write(test.idx, test.data); err != nil {
+		if err = file.Write(test.idx, test.data); err != nil {
 			t.Errorf("#%d: write file error", i)
 		}
 	}
@@ -82,7 +82,7 @@ func TestFile_Restore(t *testing.T) {
 			t.Errorf("idx: %d, could not found test", index)
 		}
 
-		if bytes.Compare(data, test.data) != 0 {
+		if !bytes.Equal(data, test.data) {
 			t.Errorf("idx: %d, want not equals to get", index)
 		}
 	})

@@ -38,7 +38,7 @@ func benchmarkWriteByte(b *testing.B, size int, batch int) {
 	b.SetBytes(int64(len(data)))
 	for i := 0; i < b.N; i++ {
 		ch := w.Write(0, data)
-		err := <-ch
+		err = <-ch
 		if err != nil {
 			b.Fatal(err)
 		}

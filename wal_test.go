@@ -121,7 +121,7 @@ func TestRestore(t *testing.T) {
 		}
 		items = append(items, it)
 		ch := wal.Write(it.idx, it.bytes)
-		if err := <-ch; err != nil {
+		if err = <-ch; err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -132,7 +132,7 @@ func TestRestore(t *testing.T) {
 		wal, err = Open(dir, test, func(index uint64, data []byte) {
 			for i := 0; i < len(items); i++ {
 				if items[i].idx == index {
-					if bytes.Compare(items[i].bytes, data) != 0 {
+					if !bytes.Equal(items[i].bytes, data) {
 						t.Fatalf("restore items wrong")
 					}
 					return
