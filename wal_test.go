@@ -10,6 +10,10 @@ import (
 	"github.com/thinkermao/wal-go/file"
 )
 
+func emptyConsumer(index uint64, data []byte) error {
+	return nil
+}
+
 func createTmpDir(t *testing.T) string {
 	path := "/tmp/wal"
 	if err := os.MkdirAll(path, 0766); err != nil {
@@ -71,7 +75,7 @@ func TestOpenAtIndex(t *testing.T) {
 			path := filepath.Join(dir, filename)
 			createFileAndClose(t, path)
 
-			w, err := Open(dir, test.at, func(index uint64, data []byte) {})
+			w, err := Open(dir, test.at, emptyConsumer)
 			if err != test.werr {
 				t.Fatalf("want: %v, get: %v", test.werr, err)
 			}
@@ -129,16 +133,17 @@ func TestRestore(t *testing.T) {
 
 	tests := []uint64{0, 10, 12, 14, 18, 25, 30, 40}
 	for _, test := range tests {
-		wal, err = Open(dir, test, func(index uint64, data []byte) {
+		wal, err = Open(dir, test, func(index uint64, data []byte) error {
 			for i := 0; i < len(items); i++ {
 				if items[i].idx == index {
 					if !bytes.Equal(items[i].bytes, data) {
 						t.Fatalf("restore items wrong")
 					}
-					return
+					return nil
 				}
 			}
 			t.Fatalf("restore index not found")
+			return nil
 		})
 		if err != nil {
 			t.Fatal(err)

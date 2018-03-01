@@ -76,7 +76,7 @@ func TestFile_Restore(t *testing.T) {
 		return nil
 	}
 
-	file, err = RestoreFile(filename, 2, func(index uint64, data []byte) {
+	file, err = RestoreFile(filename, 2, func(index uint64, data []byte) error {
 		if index < 2 {
 			t.Errorf("get old index")
 		}
@@ -89,6 +89,7 @@ func TestFile_Restore(t *testing.T) {
 		if !bytes.Equal(data, test.data) {
 			t.Errorf("idx: %d, want not equals to get", index)
 		}
+		return nil
 	})
 
 	if err != nil {

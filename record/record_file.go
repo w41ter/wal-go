@@ -26,7 +26,7 @@ var (
 )
 
 // Consumer used by RestoreFile, to consume restored records.
-type Consumer func(index uint64, data []byte)
+type Consumer func(index uint64, data []byte) error
 
 // File is record file, it has buffer, and preallocated
 // recordFileSize whitespace when first create it.
@@ -166,7 +166,9 @@ func readAllRecords(reader *file.Buffer, at uint64, consumer Consumer) (uint32, 
 		}
 
 		if recrd.Index >= at {
-			consumer(recrd.Index, recrd.Data)
+			if err := consumer(recrd.Index, recrd.Data); err != nil {
+				return 0, err
+			}
 		}
 		eat += length + 4
 	}
