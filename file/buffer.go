@@ -103,6 +103,12 @@ func (buf *Buffer) Read(bytes []byte) error {
 	return buf.Readn(bytes, len(bytes))
 }
 
+// Reset release all data in input buffer.
+func (buf *Buffer) Reset() {
+	buf.outboundMark = 0
+	buf.outboundSize = 0
+}
+
 func (buf *Buffer) inboundLeft() int {
 	return bufferSize - buf.inboundMark
 }

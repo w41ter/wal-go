@@ -151,3 +151,102 @@ func TestRestore(t *testing.T) {
 		wal.Close()
 	}
 }
+
+func TestAppend(t *testing.T) {
+	type item struct {
+		idx   uint64
+		bytes []byte
+	}
+
+	dir := createTmpDir(t)
+	defer os.RemoveAll(dir)
+
+	totalRecord := 100
+	items := make([]item, 0)
+
+	// create
+	wal, err := Create(dir, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < totalRecord; i++ {
+		it := item{
+			idx:   uint64(i),
+			bytes: randRecord(),
+		}
+		items = append(items, it)
+		ch := wal.Write(it.idx, it.bytes)
+		if err = <-ch; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err = wal.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// open and append
+	count := 0
+	wal, err = Open(dir, 0, func(index uint64, data []byte) error {
+		for i := 0; i < len(items); i++ {
+			if items[i].idx == index {
+				if !bytes.Equal(items[i].bytes, data) {
+					t.Fatalf("restore items wrong")
+				}
+				count++
+				return nil
+			}
+		}
+		t.Fatalf("restore index not found")
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != totalRecord {
+		t.Fatalf("read record count failed, want: %d, get: %d", totalRecord, count)
+	}
+
+	for i := totalRecord; i < totalRecord*2; i++ {
+		it := item{
+			idx:   uint64(i),
+			bytes: randRecord(),
+		}
+		items = append(items, it)
+		ch := wal.Write(it.idx, it.bytes)
+		if err = <-ch; err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err = wal.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// restore
+	count = 0
+	wal, err = Open(dir, 0, func(index uint64, data []byte) error {
+		for i := 0; i < len(items); i++ {
+			if items[i].idx == index {
+				if !bytes.Equal(items[i].bytes, data) {
+					t.Fatalf("restore items wrong")
+				}
+				count++
+				return nil
+			}
+		}
+		t.Fatalf("restore index not found")
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if count != totalRecord*2 {
+		t.Fatalf("open record count failed, want: %d, get: %d", totalRecord*2, count)
+	}
+
+	if err = wal.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+}

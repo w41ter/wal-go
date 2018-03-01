@@ -40,16 +40,42 @@ type File struct {
 
 // RestoreFile open record file and restore records, push to consumer.
 func RestoreFile(filename string, at uint64, consumer Consumer) (*File, error) {
-	record, err := CreateFile(filename)
+	fd, err := file.OpenFile(filename, os.O_RDWR, 0777)
 	if err != nil {
 		return nil, err
 	}
 
-	var off uint32
-	if off, err = readAllRecords(record.buffer, at, consumer); err != nil {
+	if err = fd.Lock(); err != nil {
+		fd.Close()
 		return nil, err
 	}
-	record.offset = off
+
+	buffer := file.BufferCreate(fd)
+
+	var offset uint32
+	if offset, err = readAllRecords(buffer, at, consumer); err != nil {
+		fd.Unlock()
+		fd.Close()
+		return nil, err
+	}
+
+	//because buffer not support peek() method, so when read
+	// length equals to zero, we think file records is all read,
+	// but pointer of fd is over 4 byte, so we need load this
+	// file and set append mode.
+	if _, err = fd.Seek(int64(offset), io.SeekStart); err != nil {
+		fd.Unlock()
+		fd.Close()
+		return nil, err
+	}
+
+	record := &File{
+		filename: filename,
+		file:     fd,
+		buffer:   buffer,
+		size:     recordFileSize,
+		offset:   offset,
+	}
 
 	return record, nil
 }
